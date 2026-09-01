@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -27,7 +28,7 @@ DEBUG = env_bool("DJANGO_DEBUG", default=True)
 
 ALLOWED_HOSTS = env_list(
     "DJANGO_ALLOWED_HOSTS",
-    "localhost,127.0.0.1,nayyiraah-production.up.railway.app"
+    "localhost,127.0.0.1,nayyiraah-production.up.railway.app,.vercel.app,vercel.app"
 )
 
 # Site-wide constants used across templates and SEO tags (see
@@ -128,12 +129,23 @@ WSGI_APPLICATION = "nayiraah_project.wsgi.application"
 # DJANGO_DATABASE_URL-style env vars yourself and swap this block if you
 # outgrow it and need Postgres.
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+# Use dj-database-url to read DATABASE_URL environment variable (for production)
+# Falls back to SQLite for local development
+if os.environ.get("DATABASE_URL"):
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=os.environ.get("DATABASE_URL"),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -196,7 +208,9 @@ EMAIL_BACKEND = os.environ.get(
     "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend",
 )
 EMAIL_HOST = os.environ.get("DJANGO_EMAIL_HOST", "")
-EMAIL_PORT = int(os.environ.get("DJANGO_EMAIL_PORT", "587"))
+# Safe conversion of EMAIL_PORT with fallback to 587
+_email_port = os.environ.get("DJANGO_EMAIL_PORT", "587").strip()
+EMAIL_PORT = int(_email_port) if _email_port else 587
 EMAIL_HOST_USER = os.environ.get("DJANGO_EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("DJANGO_EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = env_bool("DJANGO_EMAIL_USE_TLS", default=True)
