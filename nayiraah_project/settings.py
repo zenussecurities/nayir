@@ -27,10 +27,19 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-dev-only-chang
 # Set DJANGO_DEBUG=true only for local development
 DEBUG = env_bool("DJANGO_DEBUG", default=False)
 
-ALLOWED_HOSTS = env_list(
+# ALLOWED_HOSTS configuration - automatically includes Vercel deployment domains
+_allowed_hosts = env_list(
     "DJANGO_ALLOWED_HOSTS",
-    "localhost,127.0.0.1,nayyiraah-production.up.railway.app,*.vercel.app,vercel.app,nayiraah.org,www.nayiraah.org"
+    "localhost,127.0.0.1,nayiraah.org,www.nayiraah.org"
 )
+_allowed_hosts.extend(["*", ".vercel.app", "vercel.app", "localhost", "127.0.0.1"])
+_vercel_url = os.environ.get("VERCEL_URL", "").strip()
+if _vercel_url:
+    _allowed_hosts.append(_vercel_url)
+    if not _vercel_url.startswith("."):
+        _allowed_hosts.append(f".{_vercel_url}")
+
+ALLOWED_HOSTS = list(set(_allowed_hosts))
 
 # Site-wide constants used across templates and SEO tags (see
 # core/context_processors.py). Update these for your real domain/handle.
@@ -42,40 +51,34 @@ SITE_DEFAULT_DESCRIPTION = (
 )
 SITE_DOMAIN = os.environ.get(
     "DJANGO_SITE_DOMAIN",
-    "nayyiraah-production.up.railway.app"
+    "nayiraah.org"
 )
 
 # Build CSRF_TRUSTED_ORIGINS to include both custom domain and Vercel domains
-# This is critical for fixing 400 Bad Request errors on form submissions
 _csrf_origins = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
     f"https://{SITE_DOMAIN}",
     f"https://www.{SITE_DOMAIN}",
-    "https://nayyiraah-production.up.railway.app",
+    "https://*.vercel.app",
+    "https://*.now.sh",
 ]
 
-# Add Vercel domains if present
-_vercel_domain = os.environ.get("VERCEL_URL", "")
-if _vercel_domain:
-    _csrf_origins.append(f"https://{_vercel_domain}")
+if _vercel_url:
+    _csrf_origins.append(f"https://{_vercel_url}")
 
-# Allow any *.vercel.app domain (needed during development on Vercel)
-_csrf_origins.append("https://*.vercel.app")
-
-# Custom CSRF origins from environment (comma-separated)
 _custom_origins = env_list("DJANGO_CSRF_TRUSTED_ORIGINS", "")
 _csrf_origins.extend(_custom_origins)
 
-# Remove duplicates and empty values
 CSRF_TRUSTED_ORIGINS = list(set(o for o in _csrf_origins if o))
 
 SOCIAL_INSTAGRAM = "https://www.instagram.com/_nayiraah_/"
 
+# Always trust Vercel/reverse proxy HTTPS header
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 if not DEBUG:
     SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", default=False)
-
-    # Railway handles HTTPS and forwards this header to Django
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000
@@ -83,11 +86,6 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_REFERRER_POLICY = "same-origin"
-
-    # CSRF_TRUSTED_ORIGINS = env_list(
-    #     "DJANGO_CSRF_TRUSTED_ORIGINS",
-    #     f"https://{SITE_DOMAIN},https://www.{SITE_DOMAIN},https://nayyiraah-production.up.railway.app"
-    # )
 else:
     SECURE_CONTENT_TYPE_NOSNIFF = True
 
