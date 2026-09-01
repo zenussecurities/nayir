@@ -29,14 +29,5 @@
     "PYTHONUNBUFFERED": "1",
     "DJANGO_SETTINGS_MODULE": "nayiraah_project.settings",
     "DJANGO_DEBUG": "false"
-  },
-  "buildFiles": [
-    "requirements.txt",
-    "manage.py",
-    "build.py",
-    "nayiraah_project/**",
-    "core/**",
-    "static/**",
-    "templates/**"
-  ]
+  }
 }
