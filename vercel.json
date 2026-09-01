@@ -1,24 +1,24 @@
 {
   "buildCommand": "pip install -r requirements.txt && python build.py",
   "outputDirectory": "staticfiles",
-  "builds": [
-    {
-      "src": "nayiraah_project/wsgi.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "15mb",
-        "runtime": "python3.11"
-      }
-    },
-    {
-      "src": "static/**",
-      "use": "@vercel/static"
+  "functions": {
+    "nayiraah_project/wsgi.py": {
+      "runtime": "python3.11",
+      "memory": 1024,
+      "maxDuration": 30
     }
-  ],
+  },
   "routes": [
     {
       "src": "/static/(.*)",
-      "dest": "/static/$1"
+      "dest": "/static/$1",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/media/(.*)",
+      "dest": "/media/$1"
     },
     {
       "src": "/(.*)",
@@ -27,6 +27,16 @@
   ],
   "env": {
     "PYTHONUNBUFFERED": "1",
-    "DJANGO_SETTINGS_MODULE": "nayiraah_project.settings"
-  }
+    "DJANGO_SETTINGS_MODULE": "nayiraah_project.settings",
+    "DJANGO_DEBUG": "false"
+  },
+  "buildFiles": [
+    "requirements.txt",
+    "manage.py",
+    "build.py",
+    "nayiraah_project/**",
+    "core/**",
+    "static/**",
+    "templates/**"
+  ]
 }

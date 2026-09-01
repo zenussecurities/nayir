@@ -23,12 +23,13 @@ def env_list(name, default=""):
 # development and is intentionally obviously insecure.
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-dev-only-change-me")
 
-# DEBUG = env_bool("DJANGO_DEBUG", default=False)
-DEBUG = env_bool("DJANGO_DEBUG", default=True)
+# DEBUG should be False in production (Vercel, Railway, etc)
+# Set DJANGO_DEBUG=true only for local development
+DEBUG = env_bool("DJANGO_DEBUG", default=False)
 
 ALLOWED_HOSTS = env_list(
     "DJANGO_ALLOWED_HOSTS",
-    "localhost,127.0.0.1,nayyiraah-production.up.railway.app,.vercel.app,vercel.app"
+    "localhost,127.0.0.1,nayyiraah-production.up.railway.app,*.vercel.app,vercel.app,nayiraah.org,www.nayiraah.org"
 )
 
 # Site-wide constants used across templates and SEO tags (see
@@ -44,10 +45,28 @@ SITE_DOMAIN = os.environ.get(
     "nayyiraah-production.up.railway.app"
 )
 
-CSRF_TRUSTED_ORIGINS = env_list(
-        "DJANGO_CSRF_TRUSTED_ORIGINS",
-        f"https://{SITE_DOMAIN},https://www.{SITE_DOMAIN},https://nayyiraah-production.up.railway.app"
-    )
+# Build CSRF_TRUSTED_ORIGINS to include both custom domain and Vercel domains
+# This is critical for fixing 400 Bad Request errors on form submissions
+_csrf_origins = [
+    f"https://{SITE_DOMAIN}",
+    f"https://www.{SITE_DOMAIN}",
+    "https://nayyiraah-production.up.railway.app",
+]
+
+# Add Vercel domains if present
+_vercel_domain = os.environ.get("VERCEL_URL", "")
+if _vercel_domain:
+    _csrf_origins.append(f"https://{_vercel_domain}")
+
+# Allow any *.vercel.app domain (needed during development on Vercel)
+_csrf_origins.append("https://*.vercel.app")
+
+# Custom CSRF origins from environment (comma-separated)
+_custom_origins = env_list("DJANGO_CSRF_TRUSTED_ORIGINS", "")
+_csrf_origins.extend(_custom_origins)
+
+# Remove duplicates and empty values
+CSRF_TRUSTED_ORIGINS = list(set(o for o in _csrf_origins if o))
 
 SOCIAL_INSTAGRAM = "https://www.instagram.com/_nayiraah_/"
 
@@ -242,3 +261,58 @@ CACHES = {
 # --------------------------------------------------------------------------
 
 LOGIN_URL = "/admin/login/"
+
+
+# --------------------------------------------------------------------------
+# Logging (for debugging production issues)
+# --------------------------------------------------------------------------
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'core': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+        },
+    },
+}
