@@ -3,9 +3,7 @@
   "outputDirectory": "staticfiles",
   "functions": {
     "nayiraah_project/wsgi.py": {
-      "runtime": "python3.11",
-      "memory": 1024,
-      "maxDuration": 30
+      "runtime": "python@3.11"
     }
   },
   "routes": [
