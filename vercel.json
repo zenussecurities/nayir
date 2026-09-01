@@ -2,7 +2,7 @@
   "buildCommand": "pip install -r requirements.txt && python manage.py collectstatic --noinput",
   "env": {
     "PYTHONUNBUFFERED": "1",
-    "DJANGO_SETTINGS_MODULE": "nayiraah_project.settings",
+ "DJANGO_SETTINGS_MODULE": "nayiraah_project.settings",
     "DJANGO_DEBUG": "false"
   },
   "routes": [
@@ -12,7 +12,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "nayiraah_project/wsgi.py"
+      "dest": "api/index.py"
     }
   ]
 }
