@@ -1,31 +1,18 @@
 {
-  "buildCommand": "pip install -r requirements.txt && python build.py",
-  "outputDirectory": "staticfiles",
-  "functions": {
-    "nayiraah_project/wsgi.py": {
-      "runtime": "python@3.11"
-    }
+  "buildCommand": "pip install -r requirements.txt && python manage.py collectstatic --noinput",
+  "env": {
+    "PYTHONUNBUFFERED": "1",
+    "DJANGO_SETTINGS_MODULE": "nayiraah_project.settings",
+    "DJANGO_DEBUG": "false"
   },
   "routes": [
     {
       "src": "/static/(.*)",
-      "dest": "/static/$1",
-      "headers": {
-        "cache-control": "public, max-age=31536000, immutable"
-      }
-    },
-    {
-      "src": "/media/(.*)",
-      "dest": "/media/$1"
+      "dest": "/static/$1"
     },
     {
       "src": "/(.*)",
       "dest": "nayiraah_project/wsgi.py"
     }
-  ],
-  "env": {
-    "PYTHONUNBUFFERED": "1",
-    "DJANGO_SETTINGS_MODULE": "nayiraah_project.settings",
-    "DJANGO_DEBUG": "false"
-  }
+  ]
 }
