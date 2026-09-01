@@ -112,3 +112,8 @@ def handler(request):
 
     except Exception as e:
         return HttpResponse(f"Error: {str(e)}", status=500)
+
+
+# Expose common entrypoints for Vercel
+application = handler
+app = handler
